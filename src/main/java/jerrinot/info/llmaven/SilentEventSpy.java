@@ -11,6 +11,8 @@ import org.apache.maven.project.MavenProject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -25,15 +27,24 @@ public class SilentEventSpy extends AbstractEventSpy {
     private static final Set<String> TEST_PLUGINS = Set.of(
             "maven-surefire-plugin", "maven-failsafe-plugin");
     private static final String COMPILER_PLUGIN = "maven-compiler-plugin";
+    private static final String REDIRECT_TEST_OUTPUT_PROP = "maven.test.redirectTestOutputToFile";
 
     private final ArtifactParser artifactParser = new ArtifactParser();
     private final OutputFormatter formatter;
 
     private final AtomicBoolean active = new AtomicBoolean();
     private final AtomicBoolean loggingSuppressed = new AtomicBoolean();
+    private final AtomicBoolean redirectFailed = new AtomicBoolean();
     private volatile BuildState buildState;
     private final Set<String> parsedModules = ConcurrentHashMap.newKeySet();
+    private final Set<File> reportsDirs = ConcurrentHashMap.newKeySet();
     private volatile String previousLogLevel;
+    private volatile String previousRedirectTestOutput;
+    private volatile MavenSession session;
+    private volatile PrintStream originalOut;
+    private volatile PrintStream originalErr;
+    private volatile File buildLogFile;
+    private volatile PrintStream fileStream;
 
     public SilentEventSpy() {
         this(System.out);
@@ -54,6 +65,93 @@ public class SilentEventSpy extends AbstractEventSpy {
                 active.set(false);
                 formatter.emitPassthrough("init failed: " + e.getMessage());
             }
+        }
+    }
+
+    private void suppressConsoleOutput() {
+        originalOut = System.out;
+        originalErr = System.err;
+        PrintStream noOp = new PrintStream(OutputStream.nullOutputStream());
+        System.setOut(noOp);
+        System.setErr(noOp);
+    }
+
+    private void redirectConsoleToFile(File topLevelBaseDir) {
+        if (topLevelBaseDir == null) return;
+        suppressConsoleOutput();
+        buildLogFile = new File(topLevelBaseDir, "target/mse-build.log");
+        OutputStream lazy = new OutputStream() {
+            private FileOutputStream delegate;
+
+            private synchronized FileOutputStream open() throws java.io.IOException {
+                if (delegate == null) {
+                    buildLogFile.getParentFile().mkdirs();
+                    delegate = new FileOutputStream(buildLogFile);
+                }
+                return delegate;
+            }
+
+            @Override
+            public void write(int b) throws java.io.IOException {
+                try {
+                    open().write(b);
+                } catch (java.io.IOException e) {
+                    onRedirectFailure(e);
+                    throw e;
+                }
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws java.io.IOException {
+                try {
+                    open().write(b, off, len);
+                } catch (java.io.IOException e) {
+                    onRedirectFailure(e);
+                    throw e;
+                }
+            }
+
+            @Override
+            public synchronized void flush() throws java.io.IOException {
+                if (delegate != null) {
+                    try {
+                        delegate.flush();
+                    } catch (java.io.IOException e) {
+                        onRedirectFailure(e);
+                        throw e;
+                    }
+                }
+            }
+
+            @Override
+            public synchronized void close() throws java.io.IOException {
+                if (delegate != null) delegate.close();
+            }
+        };
+        PrintStream ps = new PrintStream(lazy, true);
+        this.fileStream = ps;
+        System.setOut(ps);
+        System.setErr(ps);
+    }
+
+    private void onRedirectFailure(java.io.IOException e) {
+        if (!redirectFailed.compareAndSet(false, true)) return;
+        restoreConsoleOutput();
+        if (fileStream != null) {
+            fileStream.close();
+        }
+        buildLogFile = null;
+        formatter.emitPassthrough("build-log redirect failed: " + e.getMessage()
+                + ". Continuing with console output."
+                + " Set MSE_REDIRECT_STDIO=false to disable redirection.");
+    }
+
+    private void restoreConsoleOutput() {
+        if (originalOut != null) {
+            System.setOut(originalOut);
+        }
+        if (originalErr != null) {
+            System.setErr(originalErr);
         }
     }
 
@@ -98,7 +196,12 @@ public class SilentEventSpy extends AbstractEventSpy {
     @Override
     public void close() throws Exception {
         try {
+            restoreConsoleOutput();
+            if (fileStream != null) {
+                fileStream.close();
+            }
             restoreMavenLogging();
+            restoreTestOutput();
         } catch (Exception e) {
             // Best-effort: never let logging restoration break Maven's shutdown
         }
@@ -107,6 +210,10 @@ public class SilentEventSpy extends AbstractEventSpy {
 
     boolean isActivated() {
         return "true".equalsIgnoreCase(System.getenv("MSE_ACTIVE"));
+    }
+
+    private boolean isRedirectEnabled() {
+        return !"false".equalsIgnoreCase(System.getenv("MSE_REDIRECT_STDIO"));
     }
 
     @Override
@@ -120,7 +227,12 @@ public class SilentEventSpy extends AbstractEventSpy {
         } catch (Exception e) {
             formatter.emitPassthrough(e.getClass().getSimpleName() + ": " + e.getMessage());
             active.set(false);
+            restoreConsoleOutput();
+            if (fileStream != null) {
+                fileStream.close();
+            }
             restoreMavenLogging();
+            restoreTestOutput();
         }
     }
 
@@ -154,13 +266,35 @@ public class SilentEventSpy extends AbstractEventSpy {
     }
 
     private void handleSessionStarted(ExecutionEvent ee) {
-        MavenSession session = ee.getSession();
+        session = ee.getSession();
+        suppressTestOutput();
         List<MavenProject> projects = session.getProjects();
         int moduleCount = projects != null ? projects.size() : 0;
+        if (isRedirectEnabled() && projects != null && !projects.isEmpty()) {
+            redirectConsoleToFile(projects.get(0).getBasedir());
+        }
         List<String> goals = session.getGoals();
         buildState = new BuildState(moduleCount);
         parsedModules.clear();
         formatter.emitSessionStart(moduleCount, goals);
+    }
+
+    private void suppressTestOutput() {
+        java.util.Properties userProps = session.getUserProperties();
+        if (userProps == null) return;
+        previousRedirectTestOutput = userProps.getProperty(REDIRECT_TEST_OUTPUT_PROP);
+        userProps.setProperty(REDIRECT_TEST_OUTPUT_PROP, "true");
+    }
+
+    private void restoreTestOutput() {
+        if (session == null) return;
+        java.util.Properties userProps = session.getUserProperties();
+        if (userProps == null) return;
+        if (previousRedirectTestOutput != null) {
+            userProps.setProperty(REDIRECT_TEST_OUTPUT_PROP, previousRedirectTestOutput);
+        } else {
+            userProps.remove(REDIRECT_TEST_OUTPUT_PROP);
+        }
     }
 
     private void handleMojoSucceeded(ExecutionEvent ee) {
@@ -205,6 +339,7 @@ public class SilentEventSpy extends AbstractEventSpy {
         if (!parsedModules.add(parseKey)) return;
 
         File reportsDir = new File(baseDir, reportsSubdir);
+        reportsDirs.add(reportsDir);
         TestSummary summary = artifactParser.parseReportsDir(reportsDir,
                 formatter::emitPassthrough);
         buildState.accumulateTests(summary);
@@ -248,6 +383,10 @@ public class SilentEventSpy extends AbstractEventSpy {
     }
 
     private void handleSessionEnded() {
+        formatter.emitTestOutputPaths(reportsDirs);
+        if (buildLogFile != null && buildLogFile.exists()) {
+            formatter.emitBuildLog(buildLogFile);
+        }
         if (buildState.isBuildFailed()) {
             formatter.emitBuildFailed(buildState);
         } else {

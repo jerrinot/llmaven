@@ -4,7 +4,9 @@ import jerrinot.info.llmaven.model.CompilerError;
 import jerrinot.info.llmaven.model.TestFailure;
 import jerrinot.info.llmaven.model.TestSummary;
 
+import java.io.File;
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.List;
 
 class OutputFormatter {
@@ -117,6 +119,16 @@ class OutputFormatter {
                 .append(" failed=").append(state.getTestFailed())
                 .append(" errors=").append(state.getTestErrors())
                 .append(" skipped=").append(state.getTestSkipped());
+    }
+
+    public void emitTestOutputPaths(Collection<File> reportsDirs) {
+        for (File dir : reportsDirs) {
+            out.println("MSE:TEST_OUTPUT " + dir.getAbsolutePath());
+        }
+    }
+
+    public void emitBuildLog(File logFile) {
+        out.println("MSE:BUILD_LOG " + logFile.getAbsolutePath());
     }
 
     public void emitPassthrough(String reason) {
