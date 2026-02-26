@@ -24,8 +24,6 @@ MSE implements Maven's `EventSpy` API. When activated, it:
 
 ## Installation
 
-### Option 1: Maven Central (recommended)
-
 Create `.mvn/extensions.xml` in your project root:
 
 ```xml
@@ -40,33 +38,15 @@ Create `.mvn/extensions.xml` in your project root:
 
 Maven downloads the extension automatically on the next build.
 
-### Option 2: Manual JAR
-
-Build the extension:
-
-```
-mvn package
-```
-
-Copy `target/maven-silent-extension-0.1.0-SNAPSHOT.jar` to a known location.
-
 ## Usage
 
-With `extensions.xml`, the extension is always on the classpath. Activate it
-with the environment variable:
+Activate with an environment variable:
 
 ```
 MSE_ACTIVE=true mvn clean verify
 ```
 
-With the manual JAR approach, pass the classpath explicitly:
-
-```
-MSE_ACTIVE=true mvn -Dmaven.ext.class.path=/path/to/maven-silent-extension.jar clean verify
-```
-
-Without `MSE_ACTIVE=true`, the extension is inert. The JAR can be left on the
-classpath unconditionally.
+Without `MSE_ACTIVE=true`, the extension is inert and produces no output.
 
 ## Output format
 
