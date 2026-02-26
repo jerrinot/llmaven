@@ -1,4 +1,4 @@
-package jerrinot.info.llmaven;
+package jerrinot.info.mse;
 
 import org.apache.maven.execution.ExecutionEvent;
 import org.apache.maven.execution.MavenSession;

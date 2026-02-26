@@ -1,7 +1,7 @@
-package jerrinot.info.llmaven;
+package jerrinot.info.mse;
 
-import jerrinot.info.llmaven.model.CompilerError;
-import jerrinot.info.llmaven.model.TestSummary;
+import jerrinot.info.mse.model.CompilerError;
+import jerrinot.info.mse.model.TestSummary;
 import org.apache.maven.eventspy.AbstractEventSpy;
 import org.apache.maven.execution.ExecutionEvent;
 import org.apache.maven.execution.MavenSession;

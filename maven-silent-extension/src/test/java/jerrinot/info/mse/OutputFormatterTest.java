@@ -1,8 +1,8 @@
-package jerrinot.info.llmaven;
+package jerrinot.info.mse;
 
-import jerrinot.info.llmaven.model.CompilerError;
-import jerrinot.info.llmaven.model.TestFailure;
-import jerrinot.info.llmaven.model.TestSummary;
+import jerrinot.info.mse.model.CompilerError;
+import jerrinot.info.mse.model.TestFailure;
+import jerrinot.info.mse.model.TestSummary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

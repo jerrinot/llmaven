@@ -1,4 +1,4 @@
-package jerrinot.info.llmaven.plugin;
+package jerrinot.info.mse.plugin;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;

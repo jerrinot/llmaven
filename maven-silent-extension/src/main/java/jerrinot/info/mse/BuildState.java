@@ -1,6 +1,6 @@
-package jerrinot.info.llmaven;
+package jerrinot.info.mse;
 
-import jerrinot.info.llmaven.model.TestSummary;
+import jerrinot.info.mse.model.TestSummary;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;

@@ -1,4 +1,4 @@
-package jerrinot.info.llmaven.model;
+package jerrinot.info.mse.model;
 
 import org.junit.jupiter.api.Test;
 

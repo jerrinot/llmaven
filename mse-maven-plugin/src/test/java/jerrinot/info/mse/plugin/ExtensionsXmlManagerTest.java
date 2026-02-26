@@ -1,4 +1,4 @@
-package jerrinot.info.llmaven.plugin;
+package jerrinot.info.mse.plugin;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

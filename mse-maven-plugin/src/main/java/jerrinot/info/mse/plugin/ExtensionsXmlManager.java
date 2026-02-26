@@ -1,4 +1,4 @@
-package jerrinot.info.llmaven.plugin;
+package jerrinot.info.mse.plugin;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

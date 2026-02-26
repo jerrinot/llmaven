@@ -1,4 +1,4 @@
-package jerrinot.info.llmaven;
+package jerrinot.info.mse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

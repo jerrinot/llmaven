@@ -1,4 +1,4 @@
-package jerrinot.info.llmaven.model;
+package jerrinot.info.mse.model;
 
 import java.util.Objects;
 
