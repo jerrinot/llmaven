@@ -7,7 +7,7 @@
     <parent>
         <groupId>info.jerrinot</groupId>
         <artifactId>llmaven-parent</artifactId>
-        <version>0.4.1</version>
+        <version>0.5.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>mse-maven-plugin</artifactId>
