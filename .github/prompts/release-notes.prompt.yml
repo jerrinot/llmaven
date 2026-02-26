@@ -22,6 +22,7 @@ messages:
       - In Full Changelog, include the significant technical changes from the provided context.
       - Do not invent changes that are not present in the provided inputs.
       - Do not use emojis.
+      - Do not wrap the response in code fences.
 
   - role: user
     content: |

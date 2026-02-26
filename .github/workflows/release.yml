@@ -152,11 +152,22 @@ jobs:
           TAG="v${{ inputs.version }}"
           RANGE="${{ steps.release_context.outputs.range }}"
           NOTES_FILE="release-notes.auto.md"
+          NORMALIZED_NOTES_FILE="release-notes.normalized.md"
           FINAL_NOTES_FILE="release-notes.final.md"
           AI_FILE="${{ steps.ai_notes.outputs.response-file }}"
           if [ -n "$AI_FILE" ] && [ -s "$AI_FILE" ]; then
             NOTES_FILE="$AI_FILE"
           fi
+
+          # Models sometimes return fenced markdown or indented markdown blocks.
+          # Normalize to plain markdown before structure validation.
+          awk '
+            /^```/ { next }
+            { print }
+          ' "$NOTES_FILE" \
+            | sed -E 's/^[[:space:]]+(## )/\1/; s/^[[:space:]]+(- )/\1/; s/^[[:space:]]+(\*\*Full Changelog\*\*)/\1/' \
+            > "$NORMALIZED_NOTES_FILE"
+          NOTES_FILE="$NORMALIZED_NOTES_FILE"
 
           validate_structured_notes() {
             local f="$1"
