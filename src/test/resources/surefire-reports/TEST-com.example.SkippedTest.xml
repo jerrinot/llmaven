@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd"
+           name="com.example.SkippedTest" time="0.010" tests="2" errors="0" skipped="2" failures="0">
+    <testcase name="testDisabled" classname="com.example.SkippedTest" time="0.000">
+        <skipped/>
+    </testcase>
+    <testcase name="testConditional" classname="com.example.SkippedTest" time="0.000">
+        <skipped message="OS condition not met"/>
+    </testcase>
+</testsuite>

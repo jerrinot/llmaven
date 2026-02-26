@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd"
+           name="com.example.AppTest" time="1.234" tests="5" errors="1" skipped="0" failures="1">
+    <testcase name="testParseInput" classname="com.example.AppTest" time="0.100">
+        <failure message="expected:&lt;42&gt; but was:&lt;0&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: expected:&lt;42&gt; but was:&lt;0&gt;
+	at com.example.AppTest.testParseInput(AppTest.java:27)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)</failure>
+    </testcase>
+    <testcase name="testEdgeCase" classname="com.example.AppTest" time="0.050">
+        <error message="Cannot invoke &quot;String.length()&quot; on null" type="java.lang.NullPointerException">java.lang.NullPointerException: Cannot invoke &quot;String.length()&quot; on null
+	at com.example.App.process(App.java:55)
+	at com.example.AppTest.testEdgeCase(AppTest.java:34)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)</error>
+    </testcase>
+    <testcase name="testValid" classname="com.example.AppTest" time="0.030"/>
+    <testcase name="testFormat" classname="com.example.AppTest" time="0.025"/>
+    <testcase name="testEmpty" classname="com.example.AppTest" time="0.020"/>
+</testsuite>
